@@ -4,6 +4,7 @@ import {
     useAccount,
     useEnsName,
     usePrepareContractWrite,
+    useWaitForTransaction,
     useContractWrite,
     useContractRead,
     useContractReads
@@ -12,10 +13,13 @@ import {
 import goerliZoraAddresses from "@zoralabs/v3/dist/addresses/5.json";
 import mainnetZoraAddresses from "@zoralabs/v3/dist/addresses/1.json";
 import auctionABI from "@zoralabs/v3/dist/artifacts/ReserveAuctionListingEth.sol/ReserveAuctionListingEth.json"
+import zmmABI from "@zoralabs/v3/dist/artifacts/ZoraModuleManager.sol/ZoraModuleManager.json"
 
 import {BigNumber, utils} from "ethers"
 
 import { ZDK, ZDKChain, ZDKNetwork } from '@zoralabs/zdk';
+
+import { useAuth } from './useAuth';
 
 import {useState, useEffect} from "react"
 
@@ -51,20 +55,6 @@ import {useState, useEffect} from "react"
         firstBidTime: "0",
         listingFeeBps: "0"
     }
-
-    // const fetchAuction: array = {
-    //     seller: address,
-    //     reservePrice: formatBigNumber("0"),
-    //     sellerFundsRecipient: "0xbC68dee71fd19C6eb4028F98F3C3aB62aAD6FeF3",
-    //     highestBid: formatBigNumber("0"),
-    //     highestBidder: "0x0000000000000000000000000000000000000000",
-    //     duration: "0",
-    //     startTime: "0",
-    //     listingFeeRecipient: "0x0000000000000000000000000000000000000000",
-    //     firstBidTime: "0",
-    //     listingFeeBps: "0"
-        
-    // }
 
     const auctionExistsNotStartedData: array = {
         seller: '0x806164c929Ad3A6f4bd70c2370b3Ef36c64dEaa8',
@@ -118,8 +108,7 @@ import {useState, useEffect} from "react"
         listingFeeBps: "0"
     }     
 
-
-    // SETTING CONSTANTS
+    // ZDK CONSTANTS
 
     const API_ENDPOINT = "https://api.zora.co/graphql";
             
@@ -133,8 +122,9 @@ import {useState, useEffect} from "react"
         ],
     })
 
-
     export function useAuction(contract: string, tokenId: string) {
+
+        const { isConnected } = useAuth();
 
         // metadata state for zdk fetching
         const [metadata, setMetadata] = useState("")        
@@ -153,8 +143,6 @@ import {useState, useEffect} from "react"
         const cleanedAuctionData = data ? cleanIncomingAuctionData(data) : noLiveAuctionData// noLiveAuctionData auctionExistsNotStartedData startedNoReservePriceYet gotFirstBidNotDone auctionDoneNotSettled
         // const cleanedAuctionData = auctionDoneNotSettled // noLiveAuctionData auctionExistsNotStartedData startedNoReservePriceYet gotFirstBidNotDone auctionDoneNotSettled
 
-
-
         // CREATE AUCTION FLOW
         const { config } = usePrepareContractWrite({
             address: mainnetZoraAddresses.ReserveAuctionListingEth,
@@ -171,6 +159,7 @@ import {useState, useEffect} from "react"
                 "0x806164c929Ad3A6f4bd70c2370b3Ef36c64dEaa8" // listing fee recip
 
             ],
+            enabled: false
         })
 
         const { data: createAuctionData, write: createAuctionWrite } = useContractWrite(config)
@@ -180,8 +169,6 @@ import {useState, useEffect} from "react"
             token: {
                 address: contract,
                 tokenId: tokenId
-                // address: "0xc1e87f349c0673de48f6292e594c62b35bc270a7",
-                // tokenId: "1"            
             },
             includeFullDetails: true // Optional, provides more data on the NFT such as all historical events
         }
@@ -208,6 +195,7 @@ import {useState, useEffect} from "react"
         status,
         createAuctionData,
         createAuctionWrite,
-        metadata
+        metadata,
+        isConnected,
     }
 }
